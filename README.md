@@ -23,6 +23,23 @@
 - 问题反馈：<https://github.com/MoTeam-cn/tts-gen-webui/issues>
 - 协议：[MIT](LICENSE)
 
+### 本地开发与推送
+
+```bat
+git add -A
+git commit -m "feat: xxx"
+git push
+```
+
+若 `git push` 报 `schannel: AcquireCredentialsHandle failed`（本机 schannel 凭据不可用），改用 gh 的令牌走一次：
+
+```powershell
+$t = (gh auth token).Trim()
+git -c http.sslBackend=openssl push "https://x-access-token:$t@github.com/MoTeam-cn/tts-gen-webui.git" main:main
+```
+
+仓库已配置 GitHub Actions（`.github/workflows/check.yml`）：push 后自动做 TypeScript 语法检查 + 启动冒烟测试（`/api/health`、`/api/capabilities`、首页）。
+
 ## 启动命令
 
 需要 Node.js ≥ 22.6（本项目用 Node 原生 TS 类型擦除运行 .ts，无需编译、无需 npm install）。

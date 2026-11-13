@@ -49,3 +49,10 @@
 - 现象：Azure 返回 400 但响应体为空，attempts 里只有一句 HTTP 400，无法定位。
 - 修法：① http.ts 所有请求显式带 content-length（怀疑 Azure 网关拒 chunked 请求体即回空体 400）；② tts.ts 增加输出格式白名单校验（不在 AUDIO_TYPE 里直接 400 并列出可用格式）；③ 主端点 400 时自动降级阶梯：完整参数 → 去 role → 去 role+style → 只留音色与文本，任一级成功即出声并写警告，全失败则提示问题不在 style/role；④ attempts 增加 format、x-ms-request-id 与实际发出的 SSML 前 300 字符；⑤ 新增 POST /api/diagnose 与前端「一键诊断」弹窗，按音色列表/最小 SSML/带 style/当前格式四步探测。
 - 验收：mock 只接受带 content-length 的请求 → 修复后 200；mock 拒绝含 express-as 的 SSML → 自动降级到「去 role+style」成功并给出警告；全 400 时 hint 说明已逐级降级并建议换音色/格式/核对资源；诊断接口正确标出第③步失败；非法格式在工具内即被拦下。
+
+第十三轮（2026-11-14）：仓库化
+- 新增 .gitignore / .gitattributes / .editorconfig / LICENSE(MIT) / .github/workflows/check.yml（语法检查 + 启动冒烟）。
+- package.json 更名 tts-gen-webui 2.3.0，补 repository / homepage / bugs / keywords / engines / license / author。
+- README 重写头部：徽章、功能清单、截图、仓库链接、通用启动命令（不再写死本机绝对路径）；逐轮开发日志移到 docs/CHANGELOG.md。
+- 删除 public/preview.png 重复截图（README 用根目录那张）。
+- 推到 https://github.com/MoTeam-cn/tts-gen-webui（main），远端原有自动生成的 LICENSE 通过 merge -X ours 合并为本仓库 LICENSE；首个提交 48 个文件，CI（check）已 success。
