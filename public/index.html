@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Azure 语音合成工作台</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+<link rel="stylesheet" href="https://unpkg.com/element-plus@2.8.4/dist/index.css" />
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, "Segoe UI", "Microsoft YaHei", "PingFang SC", sans-serif;
+    background: #f0f2f7; color: #1f2330; min-height: 100vh;
+  }
+  [v-cloak] { display: none; }
+  .page { max-width: 1480px; margin: 0 auto; padding: 18px 18px 48px; }
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;
+    background: linear-gradient(120deg, #1b2a4a 0%, #24406e 55%, #2f6fb5 100%);
+    color: #fff; border-radius: 14px; padding: 16px 20px; margin-bottom: 16px;
+    box-shadow: 0 10px 24px rgba(24, 46, 88, .18);
+  }
+  .brand { display: flex; align-items: center; gap: 14px; }
+  .logo { width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center;
+    background: rgba(255, 255, 255, .16); font-weight: 700; font-size: 13px; letter-spacing: .5px; }
+  .t1 { font-size: 17px; font-weight: 600; }
+  .t2 { font-size: 12px; opacity: .78; margin-top: 3px; }
+  .topbar .right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .card { border-radius: 12px; margin-bottom: 16px; border: 1px solid #e4e8f0; }
+  .ch { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 14px; }
+  .idx { width: 20px; height: 20px; border-radius: 6px; background: #2f6fb5; color: #fff; font-size: 12px;
+    display: inline-flex; align-items: center; justify-content: center; font-weight: 600; }
+  .ch-btn { margin-left: auto; }
+  .ch-right { margin-left: auto; font-size: 12px; font-weight: 400; color: #8a93a6; }
+  .w100 { width: 100%; }
+  .hint { font-size: 12px; color: #8a93a6; line-height: 1.7; margin-top: 4px; }
+  .btns { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .btns .el-button { margin-left: 0; }
+  .mt8 { margin-top: 10px; }
+  .o-name { float: left; }
+  .o-id { float: right; color: #9aa3b5; font-size: 12px; margin-left: 16px; }
+  .player { width: 100%; height: 40px; }
+  .logs { max-height: 240px; overflow: auto; font-family: Consolas, "Courier New", monospace; font-size: 12px; line-height: 1.7; }
+  .log-empty { color: #9aa3b5; font-size: 12px; }
+  .log-line { padding: 2px 0; border-bottom: 1px dashed #eef1f6; word-break: break-all; }
+  .log-t { color: #9aa3b5; margin-right: 8px; }
+  .lv-ok { color: #1a7f4b; }
+  .lv-err { color: #c0392b; }
+  .lv-warn { color: #b8860b; }
+  .lv-info { color: #445; }
+  .mb12 { margin-bottom: 12px; }
+  .preset { cursor: pointer; }
+  .diag-step { border-bottom: 1px dashed #eee; padding: 8px 0; }
+  .diag-name { margin-left: 8px; font-weight: 600; }
+  .diag-detail { margin-top: 4px; font-size: 12px; color: #666; word-break: break-all; white-space: pre-wrap; }
+  .think { border: 1px solid #e8e8e8; border-radius: 8px; background: #fafafa; padding: 8px 10px; }
+  .think-head { display: flex; align-items: center; justify-content: space-between; font-size: 12px; color: #666; }
+  .think-body { max-height: 220px; overflow: auto; margin: 6px 0 0; color: #666; font-size: 12px; white-space: pre-wrap; }
+  .agent-result { border: 1px dashed #cfe0f5; border-radius: 10px; padding: 10px; background: #f7fbff; }
+  .simple-wrap { max-width: 980px; margin: 0 auto; }
+  .quick-row { display: flex; align-items: center; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
+  .quick-voice { flex: 2 1 260px; }
+  .quick-style { flex: 1 1 160px; }
+  .quick-role { flex: 1 1 180px; }
+  .quick-label { font-size: 12px; color: #6b7488; white-space: nowrap; }
+  .quick-slider { flex: 1 1 160px; min-width: 120px; }
+  .topbar .el-radio-group .el-radio-button__inner { color: #e8eefb; background: rgba(255,255,255,.12); border-color: rgba(255,255,255,.25); }
+  .topbar .el-radio-button__original-radio:checked + .el-radio-button__inner { background: #fff; color: #24406e; border-color: #fff; }
+  .el-form-item { margin-bottom: 14px; }
+  .el-form-item.tight { margin-bottom: 8px; }
+  .el-form-item.tight .el-form-item__label { font-size: 12px; color: #8a93a6; padding-bottom: 2px; line-height: 1.4; }
+  .blk { border: 1px solid #e6eaf2; border-radius: 10px; padding: 12px; margin-bottom: 12px; background: #fbfcfe; }
+  .blk.off { opacity: .55; background: #f6f7fa; }
+  .blk-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .blk-idx { font-size: 12px; font-weight: 600; color: #2f6fb5; }
+  .blk-ops { margin-left: auto; display: flex; gap: 2px; }
+  .code { background: #0f1420; color: #d7e3f4; border-radius: 10px; padding: 12px 14px; font-size: 12px;
+    line-height: 1.65; font-family: Consolas, "Courier New", monospace; white-space: pre-wrap; word-break: break-word;
+    max-height: 300px; overflow: auto; margin: 10px 0 0; }
+  .prompt { max-height: 52vh; }
+  .code-area :deep(textarea) { font-family: Consolas, "Courier New", monospace; font-size: 12px; line-height: 1.6; }
+  .el-input-number.w100 { width: 100%; }
+  .el-input-number.w100 .el-input__inner { text-align: left; }
+  @media (max-width: 768px) { .page { padding: 12px; } }
+</style>
+</head>
+<body>
+<div id="app" v-cloak></div>
+
+<script type="text/x-template" id="tpl-app">
+<div class="page">
+  <div class="topbar">
+    <div class="brand">
+      <div class="logo">TTS</div>
+      <div>
+        <div class="t1">Azure 语音合成工作台</div>
+        <div class="t2">简单模式：粘贴文案就能听 · 高级模式：多段落 / SSML 全参数</div>
+      </div>
+    </div>
+    <div class="right">
+      <el-radio-group v-model="uiMode" size="small">
+        <el-radio-button label="simple">简单</el-radio-button>
+        <el-radio-button label="advanced">高级</el-radio-button>
+      </el-radio-group>
+      <el-button size="small" type="primary" @click="openImport">
+        <el-icon><upload /></el-icon><span>导入 JSON / SSML</span>
+      </el-button>
+      <el-button size="small" @click="showPrompt = true">提示词</el-button>
+      <el-button size="small" @click="openSettings">
+        <el-icon><setting /></el-icon><span>设置</span>
+      </el-button>
+      <el-tag :type="state.hot.connected ? 'success' : 'info'" effect="light" round size="small">
+        热更新{{ state.hot.connected ? '已连接' : '未连接' }}
+      </el-tag>
+      <el-tag :type="statusType" effect="light" round size="small">{{ statusText }}</el-tag>
+    </div>
+  </div>
+
+  <el-alert
+    v-if="state.hot.backendStale"
+    class="mb12"
+    type="warning"
+    show-icon
+    title="后端代码已更新：请重启 node src/server.ts 后再刷新本页"
+    @close="state.hot.backendStale = false"
+  />
+
+  <el-alert v-if="!state.cfg.key" class="mb12" type="info" show-icon :closable="false">
+    <template #title>
+      <span>还没填订阅密钥 —— 简单模式和高级模式共用同一份设置，填一次就够</span>
+      <el-button size="small" type="primary" link @click="openSettings" style="margin-left: 8px">去填 Key</el-button>
+    </template>
+  </el-alert>
+
+  <div v-if="uiMode === 'simple'" class="simple-wrap">
+    <agent-panel />
+    <quick-panel />
+    <result-panel num="2" />
+    <log-panel num="3" />
+  </div>
+
+  <el-row v-else :gutter="16">
+    <el-col :xs="24" :md="10" :lg="8">
+      <summary-card />
+      <params-panel />
+    </el-col>
+    <el-col :xs="24" :md="14" :lg="16">
+      <agent-panel />
+      <script-panel />
+      <ssml-panel />
+      <result-panel />
+      <log-panel />
+    </el-col>
+  </el-row>
+
+  <prompt-dialog v-model="showPrompt" />
+  <import-dialog v-model="importVisible" />
+
+  <el-dialog v-model="state.diagnose.visible" title="连接诊断" width="720px">
+    <div class="hint">按「音色列表 → 最小 SSML → 带 style → 当前格式」逐项探测，定位 400 到底是哪一步出的问题。</div>
+    <div class="mt8" v-if="state.diagnose.steps.length">
+      <div v-for="(s, i) in state.diagnose.steps" :key="i" class="diag-step">
+        <el-tag :type="s.ok ? 'success' : 'danger'" size="small">{{ s.ok ? '通过' : '失败' }}</el-tag>
+        <span class="diag-name">{{ s.name }}</span>
+        <div class="diag-detail">{{ s.detail }}</div>
+      </div>
+    </div>
+    <template #footer>
+      <el-button :loading="state.diagnose.loading" @click="runDiagnose">再测一次</el-button>
+      <el-button type="primary" @click="state.diagnose.visible = false">关闭</el-button>
+    </template>
+  </el-dialog>
+  <el-drawer v-model="settingsVisible" title="设置（简单 / 高级共用同一份）" size="580px">
+    <cfg-panel />
+    <el-divider />
+    <params-panel />
+    <el-divider />
+    <agent-config />
+  </el-drawer>
+</div>
+
+</script>
+
+<script type="text/x-template" id="tpl-quick">
+<el-card class="card" shadow="never">
+  <template #header>
+    <div class="ch"><span class="idx">1</span> 输入文案
+      <span class="ch-right">{{ state.blocks.length }} 段 · {{ (block && block.text ? block.text.length : 0) }} 字</span>
+    </div>
+  </template>
+
+  <div v-if="!block" class="hint">还没有内容，点下面「新建一段」或直接导入 JSON。</div>
+  <template v-else>
+    <el-input
+      v-model="block.text"
+      type="textarea"
+      :rows="8"
+      maxlength="5000"
+      show-word-limit
+      resize="vertical"
+      placeholder="把要朗读的文案粘贴进来。长文本后端会自动按句切段，不用手动分。"
+    />
+
+    <div class="quick-row">
+      <el-select v-model="block.voice" filterable allow-create default-first-option class="quick-voice" placeholder="音色">
+        <el-option v-for="v in voiceOptions" :key="v.ShortName" :label="voiceLabel(v)" :value="v.ShortName" />
+      </el-select>
+      <el-select v-model="block.style" clearable filterable class="quick-style" placeholder="风格（默认）">
+        <el-option v-for="s in styles" :key="s.value" :label="s.label" :value="s.value" />
+      </el-select>
+      <el-select v-model="block.role" clearable filterable class="quick-role" placeholder="角色（需音色支持）" @change="onRoleChange">
+        <el-option v-for="r in roles" :key="r.value" :label="r.label" :value="r.value" />
+      </el-select>
+    </div>
+
+    <div v-if="roleHint" class="hint">{{ roleHint }}</div>
+    <div class="quick-row">
+      <span class="quick-label">语速 {{ rate }}%</span>
+      <el-slider v-model="rate" :min="-50" :max="100" :step="2" class="quick-slider" />
+      <span class="quick-label">音调 {{ pitch }}%</span>
+      <el-slider v-model="pitch" :min="-50" :max="50" :step="2" class="quick-slider" />
+    </div>
+
+    <div class="btns mt8">
+      <el-button type="primary" size="large" :loading="state.busy" @click="synthesize">
+        <el-icon><video-play /></el-icon><span>合成并播放</span>
+      </el-button>
+      <el-button size="large" :disabled="!state.hasAudio" @click="downloadAudio">
+        <el-icon><download /></el-icon><span>下载</span>
+      </el-button>
+      <el-button size="large" @click="addBlock()">新建一段</el-button>
+      <el-button size="large" @click="insertSample">示例文案</el-button>
+      <el-button size="large" link type="primary" @click="setUiMode('advanced')">需要更细的控制？切到高级 →</el-button>
+    </div>
+
+    <div v-if="state.blocks.length > 1" class="hint">
+      工作台里还有 {{ state.blocks.length }} 段，简单模式只编辑第 1 段；要逐段调参请切到高级模式。
+    </div>
+  </template>
+</el-card>
+</script>
+
+<script type="text/x-template" id="tpl-import">
+<el-dialog v-model="visible" title="导入 JSON / SSML" width="800px" top="4vh">
+  <div class="hint">
+    直接粘贴 AI 给的输出即可，支持：带代码块围栏、前后带解释文字、blocks 数组、单个 {text...} 对象、{mode:"ssml", ssml:"..."}、
+    或者整段 &lt;speak&gt;…&lt;/speak&gt;。字段别名（voiceName / speed / 文案 / 语速 等）会自动识别，超范围会自动夹紧并提示。
+  </div>
+  <el-input v-model="raw" type="textarea" :rows="9" class="code-area" resize="vertical" placeholder="在这里粘贴 JSON 或 SSML" />
+  <div class="btns mt8">
+    <el-button size="small" @click="paste">从剪贴板粘贴</el-button>
+    <el-button size="small" type="primary" plain :loading="parsing" @click="parse">解析预览</el-button>
+    <el-button size="small" @click="pickFile">选择文件</el-button>
+    <el-button size="small" @click="loadExample">填入示例</el-button>
+    <el-button size="small" @click="raw = ''; parsed = null">清空</el-button>
+  </div>
+
+  <div v-if="parsed" class="mt8">
+    <el-alert
+      :type="parsed.ok ? (parsed.warnings.length ? 'warning' : 'success') : 'error'"
+      :closable="false"
+      show-icon
+      :title="parsed.ok ? ('解析成功：' + parsed.summary) : ('解析失败：' + parsed.error)"
+    />
+    <div v-if="parsed.warnings.length" class="hint">提示：{{ parsed.warnings.join('；') }}</div>
+    <el-table v-if="parsed.blocks.length" :data="parsed.blocks" size="small" class="mt8" max-height="240">
+      <el-table-column prop="text" label="文本" show-overflow-tooltip min-width="180" />
+      <el-table-column prop="voice" label="音色" width="190" />
+      <el-table-column prop="style" label="风格" width="90" />
+      <el-table-column prop="role" label="角色" width="140" />
+      <el-table-column label="语速/音调" width="100">
+        <template #default="scope">{{ scope.row.rate === null ? '-' : scope.row.rate }}/{{ scope.row.pitch === null ? '-' : scope.row.pitch }}</template>
+      </el-table-column>
+    </el-table>
+    <pre v-if="parsed.mode === 'ssml'" class="code">{{ parsed.ssml }}</pre>
+  </div>
+
+  <template #footer>
+    <div class="btns" style="justify-content: space-between">
+      <el-radio-group v-model="target" size="small">
+        <el-radio-button label="replace">覆盖现有</el-radio-button>
+        <el-radio-button label="append">追加到末尾</el-radio-button>
+      </el-radio-group>
+      <div class="btns">
+        <el-button @click="close">取消</el-button>
+        <el-button type="primary" :disabled="!parsed || !parsed.ok" @click="apply">应用到工作台</el-button>
+      </div>
+    </div>
+  </template>
+</el-dialog>
+</script>
+
+<script type="text/x-template" id="tpl-agent">
+<el-card class="card" shadow="never">
+  <template #header>
+    <div class="ch"><span class="idx">AI</span> 调参助手
+      <span class="ch-right">{{ state.agent.model || '未配置模型' }}</span>
+      <el-button class="ch-btn" link type="primary" @click="openSettings">模型设置</el-button>
+    </div>
+  </template>
+
+  <div class="hint">用一句话描述想要的声音，agent 会挑音色 / 风格 / 角色并调好语速音调，直接套到下面的工作台。</div>
+
+  <el-input
+    v-model="prompt"
+    type="textarea"
+    :rows="3"
+    resize="vertical"
+    maxlength="500"
+    show-word-limit
+    placeholder="例：低沉有磁性的男声，语速慢一点，像纪录片旁白，段落之间停半秒"
+    class="mt8"
+  />
+
+  <div class="btns mt8">
+    <el-tag v-for="p in presets" :key="p.label" class="preset" effect="plain" @click="usePreset(p.text)">{{ p.label }}</el-tag>
+  </div>
+
+  <div class="btns mt8">
+    <el-button type="primary" :loading="state.agent.running" @click="run">
+      <el-icon><magic-stick /></el-icon><span>让 agent 调参</span>
+    </el-button>
+    <el-button v-if="state.agent.running" @click="stop">停止</el-button>
+    <el-button @click="clear">清空对话</el-button>
+    <el-button v-if="state.agent.raw" link type="primary" @click="showRaw = !showRaw">{{ showRaw ? '收起模型原始输出' : '查看模型原始输出' }}</el-button>
+  </div>
+
+  <div v-if="state.agent.error" class="mt8">
+    <el-alert type="error" :closable="false" show-icon :title="state.agent.error" />
+    <div class="btns mt8">
+      <el-button size="small" type="primary" plain :loading="state.agent.running" @click="retry">强制重试（要求只输出 JSON）</el-button>
+      <el-button size="small" @click="openImport">手动贴 JSON</el-button>
+    </div>
+  </div>
+
+  <div v-if="state.agent.reasoning" class="think mt8">
+    <div class="think-head">
+      <span>模型思考过程（DeepSeek-R1 类思维链）</span>
+      <el-switch v-model="state.agent.showReasoning" size="small" active-text="显示" />
+    </div>
+    <pre v-if="state.agent.showReasoning" class="code think-body">{{ state.agent.reasoning }}</pre>
+  </div>
+
+  <pre v-if="state.agent.raw && (showRaw || state.agent.running)" class="code">{{ state.agent.raw }}</pre>
+
+  <div v-if="state.agent.fixes && state.agent.fixes.length" class="mt8">
+    <el-alert type="warning" :closable="false" show-icon :title="'模型有 ' + state.agent.fixes.length + ' 处取值不规范，已自动纠正'">
+      <div v-for="(f, i) in state.agent.fixes" :key="i" class="hint">· {{ f }}</div>
+    </el-alert>
+  </div>
+
+  <div v-if="state.agent.pending" class="agent-result mt8">
+    <el-alert type="success" :closable="false" show-icon
+      :title="'agent 已给出参数' + (state.agent.reply ? '：' + state.agent.reply : '')" />
+    <div class="btns mt8">
+      <el-button type="primary" @click="apply({ synthesize: true })">应用并合成</el-button>
+      <el-button @click="apply({ synthesize: false })">只应用参数</el-button>
+      <el-button @click="apply({ synthesize: false, target: 'append' })">追加为一段</el-button>
+      <el-button link type="primary" @click="openImport">手动看看/改改</el-button>
+    </div>
+  </div>
+</el-card>
+</script>
+
+<script type="text/x-template" id="tpl-agent-config">
+<el-card class="card" shadow="never">
+  <template #header>
+    <div class="ch"><span class="idx">AI</span> Agent 模型
+      <el-tag v-if="state.agent.model" size="small" type="success" class="ch-btn">{{ state.agent.model }}</el-tag>
+    </div>
+  </template>
+  <el-form label-position="top" @submit.prevent>
+    <el-form-item label="模型地址（OpenAI 兼容）">
+      <el-input v-model="state.agent.baseUrl" clearable placeholder="https://api.openai.com/v1 或你的中转地址" @change="saveAgentCfg" />
+      <div class="hint">支持任何 OpenAI 兼容的 /chat/completions 网关：官方、Azure OpenAI 代理、one-api、new-api、LiteLLM 等。填到 /v1 为止，没写 /v1 会自动补。</div>
+    </el-form-item>
+    <el-form-item label="模型 Key">
+      <el-input v-model="state.agent.key" type="password" show-password clearable placeholder="sk-..." @change="saveAgentCfg" />
+    </el-form-item>
+    <el-form-item label="模型">
+      <div class="btns" style="width: 100%">
+        <el-select v-model="state.agent.model" filterable allow-create default-first-option clearable class="w100" placeholder="先点右侧「拉取」，或直接手输模型名" @change="saveAgentCfg">
+          <el-option v-for="m in state.agent.models" :key="m" :label="m" :value="m" />
+        </el-select>
+        <el-button :loading="state.agent.loadingModels" @click="fetchModels">拉取</el-button>
+      </div>
+      <div class="hint">{{ state.agent.models.length ? '已拉取 ' + state.agent.models.length + ' 个模型' : '拉取会调用 {地址}/models' }}</div>
+    </el-form-item>
+    <el-row :gutter="8">
+      <el-col :span="8">
+        <el-form-item label="温度" class="tight">
+          <el-input-number v-model="state.agent.temperature" :min="0" :max="2" :step="0.1" :precision="1" class="w100" />
+        </el-form-item>
+      </el-col>
+      <el-col :span="8">
+        <el-form-item label="强制 JSON" class="tight">
+          <el-switch v-model="state.agent.jsonMode" />
+        </el-form-item>
+      </el-col>
+      <el-col :span="8">
+        <el-form-item label="自动合成" class="tight">
+          <el-switch v-model="state.agent.autoSynth" />
+        </el-form-item>
+      </el-col>
+    </el-row>
+    <div class="hint">「强制 JSON」会给网关带 response_format=json_object（不支持的网关会自动去掉参数重试）；温度建议 0~0.3，越高越容易跑偏去聊天。</div>
+    <div class="btns">
+      <el-button :loading="state.agent.loadingModels" @click="testAgent">测试连通</el-button>
+    </div>
+  </el-form>
+</el-card>
+</script>
+
+<script type="text/x-template" id="tpl-summary">
+<el-card class="card" shadow="never">
+  <template #header>
+    <div class="ch"><span class="idx">1</span> 当前配置
+      <el-button class="ch-btn" link type="primary" @click="openSettings">修改</el-button>
+    </div>
+  </template>
+  <el-descriptions :column="1" size="small" border>
+    <el-descriptions-item label="密钥">{{ state.cfg.key ? maskKey(state.cfg.key) : '未填写' }}</el-descriptions-item>
+    <el-descriptions-item label="区域">{{ state.cfg.region || '-' }}</el-descriptions-item>
+    <el-descriptions-item label="API 域名">{{ state.resolved.apiDomain || '-' }}</el-descriptions-item>
+    <el-descriptions-item label="自定义域名">{{ state.cfg.customDomain || '未设置（用自动映射）' }}</el-descriptions-item>
+    <el-descriptions-item label="输出格式">{{ state.cfg.format }}</el-descriptions-item>
+  </el-descriptions>
+  <div class="btns mt8">
+    <el-button type="primary" plain :loading="state.testing" @click="testConn">测试连接</el-button>
+    <el-button :loading="state.loadingVoices" @click="loadVoices(false)">拉取音色（全量）</el-button>
+  </div>
+  <div class="hint">与简单模式的「设置」是同一份配置，改哪边都一样。</div>
+</el-card>
+</script>
+
+<script type="text/x-template" id="tpl-cfg">
+<el-card class="card" shadow="never">
+  <template #header>
+    <div class="ch"><span class="idx">1</span> 服务配置
+      <el-button class="ch-btn" link type="primary" @click="resetAll">重置</el-button>
+    </div>
+  </template>
+  <el-form label-position="top" @submit.prevent>
+    <el-form-item label="订阅密钥 Key">
+      <el-input v-model="state.cfg.key" type="password" show-password clearable placeholder="粘贴 Azure 语音服务 Key" @change="saveCfg" />
+    </el-form-item>
+    <el-form-item label="区域 Region">
+      <el-select v-model="state.cfg.region" filterable class="w100" @change="onRegionChange">
+        <el-option v-for="r in state.regions" :key="r.id" :label="r.label" :value="r.id">
+          <span class="o-name">{{ r.name }}</span><span class="o-id">{{ r.id }}</span>
+        </el-option>
+      </el-select>
+      <div class="hint">共 {{ state.regions.length }} 个区域，域名由后端自动映射</div>
+    </el-form-item>
+    <el-form-item label="API 域名（自动映射）">
+      <el-input :model-value="state.resolved.apiDomain" readonly placeholder="选择区域后自动生成" />
+    </el-form-item>
+    <el-form-item label="TTS 合成端点（自动派生）">
+      <el-input :model-value="state.resolved.ttsEndpoint" readonly placeholder="选择区域后自动生成" />
+    </el-form-item>
+    <el-form-item label="自定义域名（可选，覆盖映射）">
+      <el-input v-model="state.cfg.customDomain" clearable placeholder="如 japaneast.api.cognitive.microsoft.com" @change="onRegionChange" />
+    </el-form-item>
+    <div class="btns">
+      <el-button type="primary" plain :loading="state.testing" @click="testConn">测试连接</el-button>
+      <el-button :loading="state.loadingVoices" @click="loadVoices(false)">拉取音色（全量）</el-button>
+      <el-button :loading="state.diagnose.loading" @click="openDiagnose(); runDiagnose()">一键诊断</el-button>
+    </div>
+    <div class="btns mt8">
+      <el-button size="small" @click="reloadNow('frontend')">触发刷新事件</el-button>
+      <el-button size="small" @click="reloadNow('backend')">触发重启提示</el-button>
+      <el-button size="small" link type="primary" @click="connectEvents">重连通道</el-button>
+    </div>
+    <div class="hint">音色来源：{{ state.voiceSource }} · {{ state.voices.length }} 个。改 public/ 下文件保存即自动刷新页面。</div>
+  </el-form>
+</el-card>
+</script>
+
+<script type="text/x-template" id="tpl-params">
+<el-card class="card" shadow="never">
+  <template #header>
+    <div class="ch"><span class="idx">2</span> 合成参数（默认值）</div>
+  </template>
+  <el-form label-position="top" @submit.prevent>
+    <el-form-item label="输出格式 format">
+      <el-select v-model="state.cfg.format" class="w100" @change="saveCfg">
+        <el-option v-for="f in formats" :key="f.value" :label="f.label" :value="f.value" />
+      </el-select>
+    </el-form-item>
+    <el-form-item label="语言 xml:lang">
+      <el-select v-model="state.cfg.lang" filterable allow-create default-first-option class="w100" @change="saveCfg">
+        <el-option v-for="l in localeOptions" :key="l.value" :label="l.label" :value="l.value" />
+      </el-select>
+    </el-form-item>
+    <el-form-item label="默认音色 voice">
+      <el-select v-model="state.defaults.voice" filterable class="w100">
+        <el-option v-for="v in voiceOptions" :key="v.ShortName" :label="voiceLabel(v)" :value="v.ShortName" />
+      </el-select>
+    </el-form-item>
+    <el-row :gutter="8">
+      <el-col :span="12">
+        <el-form-item label="默认风格 style" class="tight">
+          <el-select v-model="state.defaults.style" clearable filterable class="w100" placeholder="不设置（保持默认）">
+            <el-option v-for="s in styles" :key="s.value" :label="s.label" :value="s.value" />
+          </el-select>
+        </el-form-item>
+      </el-col>
+      <el-col :span="12">
+        <el-form-item label="默认角色 role" class="tight">
+          <el-select v-model="state.defaults.role" clearable filterable class="w100" placeholder="不设置（保持默认）">
+            <el-option v-for="r in roles" :key="r.value" :label="r.label" :value="r.value" />
+          </el-select>
+        </el-form-item>
+      </el-col>
+    </el-row>
+    <el-row :gutter="8">
+      <el-col :span="12">
+        <el-form-item label="强度 styledegree" class="tight">
+          <el-input-number v-model="state.defaults.styleDegree" :min="0.01" :max="2" :step="0.1" :precision="2" class="w100" />
+        </el-form-item>
+      </el-col>
+      <el-col :span="12">
+        <el-form-item label="段后停顿 ms" class="tight">
+          <el-input-number v-model="state.defaults.pauseAfter" :min="0" :max="10000" :step="100" class="w100" />
+        </el-form-item>
+      </el-col>
+    </el-row>
+    <el-row :gutter="8">
+      <el-col :span="8">
+        <el-form-item label="语速 %" class="tight">
+          <el-input-number v-model="state.defaults.rate" :min="-50" :max="100" :step="2" class="w100" />
+        </el-form-item>
+      </el-col>
+      <el-col :span="8">
+        <el-form-item label="音调 %" class="tight">
+          <el-input-number v-model="state.defaults.pitch" :min="-50" :max="50" :step="2" class="w100" />
+        </el-form-item>
+      </el-col>
+      <el-col :span="8">
+        <el-form-item label="音量 %" class="tight">
+          <el-input-number v-model="state.defaults.volume" :min="-50" :max="50" :step="2" class="w100" />
+        </el-form-item>
+      </el-col>
+    </el-row>
+    <div class="btns">
+      <el-button type="primary" plain @click="applyDefaultsToAll">套用到全部段落</el-button>
+    </div>
+    <div class="hint">这里只是「新建段落」与「批量套用」的默认值，每个段落仍可单独覆盖。</div>
+  </el-form>
+</el-card>
+</script>
+
+<script type="text/x-template" id="tpl-script">
+<el-card class="card" shadow="never">
+  <template #header>
+    <div class="ch"><span class="idx">3</span> 段落工作台
+      <span class="ch-right">{{ state.blocks.length }} 段 · {{ totalChars }} 字</span>
+    </div>
+  </template>
+
+  <block-card
+    v-for="(b, i) in state.blocks"
+    :key="b.id"
+    :block="b"
+    :index="i"
+    :total="state.blocks.length"
+    @duplicate="duplicateBlock(i)"
+    @move-up="moveBlock(i, -1)"
+    @move-down="moveBlock(i, 1)"
+    @remove="removeBlock(i)"
+  />
+
+  <div class="btns mt8">
+    <el-button type="primary" plain @click="addBlock()">+ 添加段落</el-button>
+    <el-button @click="insertSample">插入示例（双人对话）</el-button>
+    <el-button @click="clearBlocks">清空</el-button>
+  </div>
+
+  <el-divider />
+
+  <div class="btns">
+    <el-button type="primary" :loading="state.busy" @click="synthesize">
+      <el-icon><video-play /></el-icon><span>合成并试听</span>
+    </el-button>
+    <el-button :disabled="!state.hasAudio" @click="downloadAudio">
+      <el-icon><download /></el-icon><span>下载音频</span>
+    </el-button>
+  </div>
+</el-card>
+</script>
+
+<script type="text/x-template" id="tpl-block">
+<div class="blk" :class="{ off: !block.enabled }">
+  <div class="blk-head">
+    <span class="blk-idx">段落 {{ index + 1 }}</span>
+    <el-switch v-model="block.enabled" size="small" />
+    <div class="blk-ops">
+      <el-button size="small" link @click="$emit('duplicate')">复制</el-button>
+      <el-button size="small" link :disabled="index === 0" @click="$emit('move-up')">上移</el-button>
+      <el-button size="small" link :disabled="index === total - 1" @click="$emit('move-down')">下移</el-button>
+      <el-button size="small" link type="danger" :disabled="total <= 1" @click="$emit('remove')">删除</el-button>
+    </div>
+  </div>
+
+  <el-input
+    v-model="block.text"
+    type="textarea"
+    :rows="3"
+    maxlength="3000"
+    show-word-limit
+    resize="vertical"
+    placeholder="这一段要朗读的文案（< & > 等字符会自动转义）"
+  />
+
+  <el-row :gutter="8" class="mt8">
+    <el-col :xs="24" :sm="12">
+      <el-form-item label="音色 voice" class="tight">
+        <el-select v-model="block.voice" filterable allow-create default-first-option class="w100" placeholder="搜索中文名或音色代码">
+          <el-option v-for="v in voiceOptions" :key="v.ShortName" :label="voiceLabel(v)" :value="v.ShortName" />
+        </el-select>
+      </el-form-item>
+    </el-col>
+    <el-col :xs="12" :sm="6">
+      <el-form-item label="风格 style" class="tight">
+        <el-select v-model="block.style" clearable filterable class="w100" placeholder="默认">
+          <el-option v-for="s in styles" :key="s.value" :label="s.label" :value="s.value" />
+        </el-select>
+      </el-form-item>
+    </el-col>
+    <el-col :xs="12" :sm="6">
+      <el-form-item label="角色 role" class="tight">
+        <el-select v-model="block.role" clearable filterable class="w100" placeholder="需音色支持" @change="onRoleChange">
+          <el-option v-for="r in roles" :key="r.value" :label="r.label" :value="r.value" />
+        </el-select>
+        <div v-if="roleHint" class="hint" style="font-size: 11px">{{ roleHint }}</div>
+      </el-form-item>
+    </el-col>
+  </el-row>
+
+  <el-row :gutter="8">
+    <el-col :xs="12" :sm="6">
+      <el-form-item label="强度 styledegree" class="tight">
+        <el-input-number v-model="block.styleDegree" :min="0.01" :max="2" :step="0.1" :precision="2" class="w100" />
+      </el-form-item>
+    </el-col>
+    <el-col :xs="12" :sm="6">
+      <el-form-item label="语速 rate %" class="tight">
+        <el-input-number v-model="block.rate" :min="-50" :max="100" :step="2" class="w100" />
+      </el-form-item>
+    </el-col>
+    <el-col :xs="12" :sm="6">
+      <el-form-item label="音调 pitch %" class="tight">
+        <el-input-number v-model="block.pitch" :min="-50" :max="50" :step="2" class="w100" />
+      </el-form-item>
+    </el-col>
+    <el-col :xs="12" :sm="6">
+      <el-form-item label="音量 volume %" class="tight">
+        <el-input-number v-model="block.volume" :min="-50" :max="50" :step="2" class="w100" />
+      </el-form-item>
+    </el-col>
+  </el-row>
+
+  <el-row :gutter="8">
+    <el-col :xs="12" :sm="8">
+      <el-form-item label="段后停顿 pauseAfter (ms)" class="tight">
+        <el-input-number v-model="block.pauseAfter" :min="0" :max="10000" :step="100" class="w100" />
+      </el-form-item>
+    </el-col>
+    <el-col :xs="24" :sm="16">
+      <el-form-item label="音调曲线 contour（高级，留空不启用）" class="tight">
+        <el-input v-model="block.contour" clearable placeholder="(0%,+20Hz) (100%,+40Hz)" />
+      </el-form-item>
+    </el-col>
+  </el-row>
+</div>
+</script>
+
+<script type="text/x-template" id="tpl-ssml">
+<el-card class="card" shadow="never">
+  <template #header>
+    <div class="ch"><span class="idx">4</span> SSML
+      <el-radio-group v-model="state.cfg.mode" size="small" class="ch-right" @change="saveCfg">
+        <el-radio-button label="params">参数模式</el-radio-button>
+        <el-radio-button label="ssml">源码模式</el-radio-button>
+      </el-radio-group>
+    </div>
+  </template>
+
+  <template v-if="state.cfg.mode === 'params'">
+    <div class="btns">
+      <el-button size="small" :loading="state.preview.loading" @click="refreshPreview">刷新预览</el-button>
+      <el-button size="small" @click="switchToSsmlMode">转成源码编辑</el-button>
+      <el-button size="small" @click="copyText(state.preview.ssml, 'SSML 已复制')">复制 SSML</el-button>
+      <el-tag size="small" type="success" v-if="state.preview.parts">{{ state.preview.parts }} 段请求</el-tag>
+    </div>
+    <pre class="code">{{ state.preview.ssml || '（暂无内容：填写段落后会自动生成）' }}</pre>
+    <div class="hint">这是后端 /api/ssml/preview 生成的真实 SSML，合成时提交的就是它。</div>
+  </template>
+
+  <template v-else>
+    <div class="btns">
+      <el-button size="small" @click="refreshPreview">校验</el-button>
+      <el-button size="small" @click="resetSsmlTemplate">插入模板</el-button>
+      <el-button size="small" @click="copyText(state.ssmlText, 'SSML 已复制')">复制</el-button>
+      <el-button size="small" @click="switchToParamsMode">回到参数模式</el-button>
+      <el-tag size="small" :type="state.validation.ok === false ? 'danger' : (state.validation.ok ? 'success' : 'info')">
+        {{ state.validation.message || '未校验' }}
+      </el-tag>
+    </div>
+    <el-input v-model="state.ssmlText" type="textarea" :rows="16" class="code-area" resize="vertical" placeholder="粘贴或手写完整的 <speak> ... </speak>" />
+    <div class="hint">支持任意 mstts 标记（express-as / backgroundaudio / phoneme 等）。校验项：speak 根节点、命名空间、标签闭合、60KB 上限。</div>
+  </template>
+</el-card>
+</script>
+
+<script type="text/x-template" id="tpl-result">
+<el-card class="card" shadow="never">
+  <template #header>
+    <div class="ch"><span class="idx">{{ num }}</span> 播放与结果</div>
+  </template>
+  <div v-if="state.lastError.message" class="mt8">
+    <el-alert type="error" :closable="false" show-icon :title="state.lastError.message" />
+    <div v-if="state.lastError.hint" class="hint mt8">{{ state.lastError.hint }}</div>
+    <el-collapse v-if="state.lastError.attempts.length" class="mt8">
+      <el-collapse-item :title="'逐条尝试记录（' + state.lastError.attempts.length + ' 条）'" name="1">
+        <pre class="code">{{ state.lastError.attempts.join('\n') }}</pre>
+      </el-collapse-item>
+    </el-collapse>
+  </div>
+  <audio id="tts-player" class="player" controls :src="state.audioUrl"></audio>
+  <el-descriptions class="mt8" :column="2" border size="small">
+    <el-descriptions-item label="命中端点">{{ state.info.endpoint || '-' }}</el-descriptions-item>
+    <el-descriptions-item label="耗时">{{ state.info.ms ? state.info.ms + ' ms' : '-' }}</el-descriptions-item>
+    <el-descriptions-item label="分段请求">{{ state.info.chunks || '-' }}</el-descriptions-item>
+    <el-descriptions-item label="音频大小">{{ state.info.bytes ? (state.info.bytes / 1024).toFixed(1) + ' KB' : '-' }}</el-descriptions-item>
+    <el-descriptions-item label="xml:lang">{{ state.info.lang || state.cfg.lang }}</el-descriptions-item>
+    <el-descriptions-item label="参与音色">{{ state.info.voices || '-' }}</el-descriptions-item>
+  </el-descriptions>
+</el-card>
+</script>
+
+<script type="text/x-template" id="tpl-log">
+<el-card class="card" shadow="never">
+  <template #header>
+    <div class="ch"><span class="idx">{{ num }}</span> 运行日志
+      <span class="ch-right">{{ state.hot.lastEvent ? '最近事件：' + state.hot.lastEvent : '' }}</span>
+      <el-button class="ch-btn" link type="primary" @click="state.logs = []">清空</el-button>
+    </div>
+  </template>
+  <div class="logs">
+    <div v-if="!state.logs.length" class="log-empty">暂无日志</div>
+    <div v-for="(l, i) in state.logs" :key="i" class="log-line" :class="'lv-' + l.level">
+      <span class="log-t">{{ l.t }}</span>{{ l.msg }}
+    </div>
+  </div>
+</el-card>
+</script>
+
+<script type="text/x-template" id="tpl-prompt">
+<el-dialog v-model="visible" title="提示词：交给 agent 让它帮你写" width="860px" top="4vh">
+  <div class="hint">
+    下面这段是整个工作台的说明书：支持哪些参数、role/style 怎么填、SSML 的硬性规则、要输出什么格式。
+    复制给任意 agent（Claude / GPT / Codex 都行），它就能直接产出可以粘贴回本页的 JSON 或 SSML。
+  </div>
+  <div class="btns mt8">
+    <el-button type="primary" size="small" @click="copyText(full, '完整提示词已复制')">复制完整版</el-button>
+    <el-button size="small" @click="copyText(short, '精简提示词已复制')">复制精简版</el-button>
+    <el-button size="small" @click="refresh">按当前面板刷新</el-button>
+    <el-button size="small" @click="close">关闭</el-button>
+  </div>
+  <el-tabs class="mt8">
+    <el-tab-pane label="完整版（推荐）">
+      <pre class="code prompt">{{ full }}</pre>
+    </el-tab-pane>
+    <el-tab-pane label="精简版">
+      <pre class="code prompt">{{ short }}</pre>
+    </el-tab-pane>
+  </el-tabs>
+</el-dialog>
+</script>
+
+<script src="https://unpkg.com/vue@3.4.38/dist/vue.global.prod.js"></script>
+<script src="https://unpkg.com/element-plus@2.8.4/dist/index.full.min.js"></script>
+<script src="https://unpkg.com/@element-plus/icons-vue@2.3.1/dist/index.iife.min.js"></script>
+<script src="/data.js"></script>
+<script type="module" src="/js/main.js"></script>
+</body>
+</html>

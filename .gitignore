@@ -1,0 +1,24 @@
+# 依赖与构建产物
+node_modules/
+dist/
+*.tsbuildinfo
+
+# 本地配置与密钥（本工具不落盘密钥，这里只是兜底）
+.env
+.env.*
+*.local
+cfg*.json
+
+# 日志与临时文件
+*.log
+logs/
+npm-debug.log*
+tmp/
+.cache/
+
+# 编辑器 / 系统
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
